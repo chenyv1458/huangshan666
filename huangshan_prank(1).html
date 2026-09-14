@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>整蛊小剧场 · 黄鳝</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; background: #f2f2f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+.phone { max-width: 420px; margin: 0 auto; height: 100%; background: #fff; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; background: #fff; z-index: 2; }
+.head .ava { flex: none; }
+.head .name { font-size: 17px; font-weight: 500; color: #111; }
+.head .tip { font-size: 12px; color: #999; min-height: 16px; }
+.chat { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 12px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sys { text-align: center; font-size: 12px; color: #bbb; }
+.msg { display: flex; align-items: flex-start; gap: 8px; }
+.msg.me { flex-direction: row-reverse; }
+.ava { flex: none; }
+.bub { max-width: 76%; padding: 10px 12px; font-size: 15px; line-height: 22px; border-radius: 12px; position: relative; word-break: break-word; }
+.msg.e .bub { background: #f0f0f0; color: #111; border-top-left-radius: 4px; }
+.msg.me .bub { background: #111; color: #fff; border-top-right-radius: 4px; }
+.me-ava { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #666; background: #fff; }
+.typing { display: flex; gap: 4px; padding: 12px 14px; background: #f0f0f0; border-radius: 12px; border-top-left-radius: 4px; width: max-content; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: #bbb; animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .2s; }
+.typing i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%,100%{opacity:.25} 50%{opacity:1} }
+.opts { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; }
+.opts button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #111; font-size: 15px; cursor: pointer; transition: all .15s ease; }
+.opts button:hover { background: #111; color: #fff; border-color: #111; }
+.opts button:active { transform: scale(0.98); }
+.end { text-align: center; font-size: 12px; color: #bbb; padding: 0 12px 16px; }
+.end button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #111; font-size: 15px; cursor: pointer; width: 100%; margin-top: 8px; transition: all .15s ease; }
+.end button:hover { background: #111; color: #fff; border-color: #111; }
+.end button:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="head">
+    <div class="ava"><svg viewBox="0 0 44 44" width="38" height="38" aria-hidden="true"><circle cx="22" cy="22" r="21" fill="#FFF3E0"/><path d="M8 31 C 12 19, 18 35, 24 27 C 28 22, 30 20, 32 19" fill="none" stroke="#FF9800" stroke-width="8" stroke-linecap="round"/><circle cx="32" cy="17" r="7" fill="#FF9800"/><circle cx="29.6" cy="15.4" r="1.7" fill="#fff"/><circle cx="34.4" cy="15.4" r="1.7" fill="#fff"/><circle cx="30" cy="15.8" r="0.85" fill="#111"/><circle cx="34.8" cy="15.8" r="0.85" fill="#111"/><path d="M29.6 19.4 Q 32 21.4 34.4 19.4" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+    <div>
+      <div class="name">黄鳝</div>
+      <div class="tip" id="tip"></div>
+    </div>
+  </div>
+  <div class="chat" id="chat"></div>
+  <div class="opts" id="opts"></div>
+  <div class="end" id="end"></div>
+</div>
+
+<script>
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const chat = document.getElementById('chat');
+const opts = document.getElementById('opts');
+const tip = document.getElementById('tip');
+const end = document.getElementById('end');
+const EEL = '<svg viewBox="0 0 44 44" width="40" height="40" aria-hidden="true"><circle cx="22" cy="22" r="21" fill="#FFF3E0"/><path d="M8 31 C 12 19, 18 35, 24 27 C 28 22, 30 20, 32 19" fill="none" stroke="#FF9800" stroke-width="8" stroke-linecap="round"/><circle cx="32" cy="17" r="7" fill="#FF9800"/><circle cx="29.6" cy="15.4" r="1.7" fill="#fff"/><circle cx="34.4" cy="15.4" r="1.7" fill="#fff"/><circle cx="30" cy="15.8" r="0.85" fill="#111"/><circle cx="34.8" cy="15.8" r="0.85" fill="#111"/><path d="M29.6 19.4 Q 32 21.4 34.4 19.4" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round"/></svg>';
+
+const FLOW = {
+  open: [
+    {e:'你啥意思敢忤逆我'},
+    {choices:[['不敢不敢，我错了','apologize'],['就忤逆你，怎么了','defy']]}
+  ],
+  apologize: [
+    {e:'哼，现在知道错了？晚了！'},
+    {e:'你敢拆我的台？'},
+    {e:'我的台也是你能拆的'},
+    {e:'你完了'},
+    {choices:[['姐姐饶命','mercy'],['你姐能有多凶','siswho']]}
+  ],
+  defy: [
+    {e:'好，很好。'},
+    {e:'我的台也是你能拆的？'},
+    {e:'你完了'},
+    {choices:[['姐姐饶命','mercy2'],['你姐能有多凶','siswho2']]}
+  ],
+  mercy: [
+    {e:'现在知道叫姐了？'},
+    {e:'晚了！'},
+    {e:'你完了'},
+    {e:'你知道我姐是谁吗'},
+    {e:'信不信我让我姐揍你'},
+    {e:'我可是大姐大'},
+    {e:'我姐已经出门了'},
+    {e:'对了，让她给你带了杯奶茶，七分糖'}
+  ],
+  siswho: [
+    {e:'你敢说我姐？'},
+    {e:'你完了'},
+    {e:'我可是大姐大'},
+    {e:'你知道我姐是谁吗'},
+    {e:'信不信我让我姐揍你'},
+    {e:'我姐三秒之内到你家楼下'},
+    {e:'她已经到楼下了，开门'}
+  ],
+  mercy2: [
+    {e:'现在知道怕了？'},
+    {e:'你完了'},
+    {e:'你知道我姐是谁吗'},
+    {e:'信不信我让我姐揍你'},
+    {e:'我的台也是你能拆的'},
+    {e:'我可是大姐大'},
+    {e:'这次先放过你，下不为例'}
+  ],
+  siswho2: [
+    {e:'你再说一遍？'},
+    {e:'你完了'},
+    {e:'你知道我姐是谁吗'},
+    {e:'我可是大姐大'},
+    {e:'信不信我让我姐揍你'},
+    {e:'我姐已经抄上家伙出门了'}
+  ]
+};
+
+function sys(t){
+  const d = document.createElement('div');
+  d.className = 'sys'; d.textContent = t;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+function addMsg(who, text){
+  const row = document.createElement('div');
+  row.className = 'msg ' + who;
+  row.innerHTML = who === 'e'
+    ? '<div class="ava">' + EEL + '</div><div class="bub"></div>'
+    : '<div class="bub"></div><div class="ava me-ava">我</div>';
+  row.querySelector('.bub').textContent = text;
+  chat.appendChild(row); chat.scrollTop = chat.scrollHeight;
+}
+let typingRow = null;
+function setTyping(on){
+  if(on){
+    typingRow = document.createElement('div');
+    typingRow.className = 'msg e';
+    typingRow.innerHTML = '<div class="ava">' + EEL + '</div><div class="typing"><i></i><i></i><i></i></div>';
+    chat.appendChild(typingRow); chat.scrollTop = chat.scrollHeight;
+    tip.textContent = '对方正在输入…';
+  } else if(typingRow){
+    typingRow.remove(); typingRow = null;
+    tip.textContent = '';
+  }
+}
+async function eSay(text){
+  setTyping(true);
+  await sleep(650 + Math.random() * 550);
+  setTyping(false);
+  addMsg('e', text);
+  await sleep(420);
+}
+function showChoices(list){
+  return new Promise(resolve => {
+    opts.innerHTML = '';
+    list.forEach(function(pair){
+      const b = document.createElement('button');
+      b.textContent = pair[0];
+      b.onclick = async function(){
+        opts.innerHTML = '';
+        addMsg('me', pair[0]);
+        await sleep(400);
+        resolve(pair[1]);
+      };
+      opts.appendChild(b);
+    });
+  });
+}
+async function run(steps){
+  for(const s of steps){
+    if(s.e) await eSay(s.e);
+    else if(s.choices){
+      const next = await showChoices(s.choices);
+      await run(FLOW[next]);
+      return;
+    }
+  }
+  finish();
+}
+function finish(){
+  end.innerHTML = '';
+  const note = document.createElement('div');
+  note.style.padding = '0';
+  note.textContent = '· 整蛊小剧场，纯属娱乐 ·';
+  end.appendChild(note);
+  const b = document.createElement('button');
+  b.textContent = '再来一遍';
+  b.onclick = start;
+  end.appendChild(b);
+}
+async function start(){
+  chat.innerHTML = ''; opts.innerHTML = ''; end.innerHTML = '';
+  await sleep(350);
+  sys('你们已经成为好友，现在可以开始聊天了');
+  await sleep(500);
+  run(FLOW.open);
+}
+start();
+</script>
+</body>
+</html>
